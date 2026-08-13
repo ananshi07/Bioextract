@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { font-family: 'Inter', sans-serif; }
+.font-serif { font-family: 'Source Serif 4', Georgia, serif; }
+.font-mono { font-family: 'IBM Plex Mono', monospace; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #A9BFA8; border-radius: 4px; }
