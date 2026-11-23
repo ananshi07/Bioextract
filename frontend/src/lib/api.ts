@@ -1,9 +1,22 @@
 // Thin fetch wrapper. Frontend never touches SQLite directly - everything
 // goes through these HTTP calls to the FastAPI backend.
 const BASE = "/api";
+const TOKEN_KEY = "bioextract_auth_token";
+
+export function getAuthToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setAuthToken(token: string | null) {
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
 
 async function request(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${BASE}${path}`, options);
+  const token = getAuthToken();
+  const headers = new Headers(options.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`${BASE}${path}`, { ...options, headers });
   if (!res.ok) {
     let detail = res.statusText;
     try {
@@ -18,10 +31,37 @@ async function request(path: string, options: RequestInit = {}) {
 
 export const api = {
   health: () => request("/health"),
+  signup: async (email: string, password: string) => {
+    const result = await request("/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    setAuthToken(result.token);
+    return result.user;
+  },
+  login: async (email: string, password: string) => {
+    const result = await request("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    setAuthToken(result.token);
+    return result.user;
+  },
+  logout: async () => {
+    try {
+      await request("/auth/logout", { method: "POST" });
+    } finally {
+      setAuthToken(null);
+    }
+  },
+  me: () => request("/auth/me").then((result) => result.user),
   listPapers: () => request("/papers"),
   getPaper: (id: number) => request(`/papers/${id}`),
   getPages: (id: number) => request(`/papers/${id}/pages`),
-  paperFileUrl: (id: number) => `${BASE}/papers/${id}/file`,
+  paperFileUrl: (id: number) =>
+    `${BASE}/papers/${id}/file${getAuthToken() ? `?token=${encodeURIComponent(getAuthToken() as string)}` : ""}`,
   uploadPaper: async (file: File) => {
     const form = new FormData();
     form.append("file", file);

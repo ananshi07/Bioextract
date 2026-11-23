@@ -30,7 +30,7 @@ Research Paper PDF
 PDF processing (pypdf)              backend/pdf/
       │  page-aware text + deterministic metadata
       ▼
-AI extraction (Groq, free tier)     backend/extraction/llm_extractor.py
+AI extraction (Groq)                backend/extraction/llm_extractor.py
       │  schema-validated (Pydantic) structured observations
       ▼
 Evidence verification               backend/extraction/evidence.py
@@ -64,7 +64,7 @@ PDFs, LLM prompts, or the frontend.
 - **Backend:** Python, FastAPI
 - **Data processing:** Python (pypdf, regex-based cleaning)
 - **Database:** SQLite (plain `sqlite3`, no ORM)
-- **AI:** Groq API (free tier, e.g. llama-3.3-70b-versatile via OpenAI-compatible tool calling), validated with Pydantic
+- **AI:** Groq API via OpenAI-compatible tool calling, validated with Pydantic. Model access and usage cost depend on the configured model and Groq account.
 
 ## Folder structure
 
@@ -98,7 +98,7 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp ../.env.example ../.env     # then fill in GROQ_API_KEY (free, see below)
+cp ../.env.example ../.env     # then fill in GROQ_API_KEY and an enabled GROQ_MODEL
 uvicorn main:app --reload --port 8000
 ```
 
@@ -116,10 +116,13 @@ Visit `http://localhost:5173`. Vite proxies `/api` to `http://localhost:8000`.
 
 ### Environment variables
 
-See `.env.example`. Only `GROQ_API_KEY` is required for real AI extraction — get a
-free key (no credit card required) at https://console.groq.com/keys. Without it,
-paper upload/viewing/browsing still works but the "Run AI Extraction" call will
-return a clear error (`/api/health` reports `demo_mode: true` in that case).
+See `.env.example`. `GROQ_API_KEY` and a model enabled for that key are required
+for real AI extraction. Create a key at https://console.groq.com/keys and check
+the current model list and pricing for your account before choosing `GROQ_MODEL`.
+Set `GROQ_RATE_LIMIT_TPM` to the token-per-minute limit for that model/account;
+the default is a conservative 12,000 TPM.
+Without a key, paper upload/viewing/browsing still works, but "Run AI Extraction"
+returns an error (`/api/health` reports `demo_mode: true` in that case).
 
 ## How it works
 

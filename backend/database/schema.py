@@ -13,6 +13,21 @@ DB_PATH = os.getenv(
 )
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS app_user (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS auth_session (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS project (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL DEFAULT 'Default Project',
@@ -106,6 +121,11 @@ def get_conn():
 def init_db():
     with get_conn() as conn:
         conn.executescript(SCHEMA)
+        paper_columns = {row["name"] for row in conn.execute("PRAGMA table_info(paper)").fetchall()}
+        if "owner_id" not in paper_columns:
+            conn.execute(
+                "ALTER TABLE paper ADD COLUMN owner_id INTEGER REFERENCES app_user(id) ON DELETE CASCADE"
+            )
         conn.execute(
             "INSERT INTO project (id, name) "
             "SELECT 1, 'Default Project' WHERE NOT EXISTS (SELECT 1 FROM project WHERE id=1)"

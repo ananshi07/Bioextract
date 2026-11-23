@@ -8,7 +8,13 @@ const LINKS = [
   { to: "/reports", label: "Reports", active: false },
 ];
 
-export default function Nav() {
+export default function Nav({
+  user,
+  onLogout,
+}: {
+  user: { id: number; email: string } | null;
+  onLogout: () => void;
+}) {
   const loc = useLocation();
   return (
     <header className="border-b border-sage/40 bg-offwhite/95 backdrop-blur sticky top-0 z-10">
@@ -17,6 +23,11 @@ export default function Nav() {
           BioExtract
         </Link>
         <nav className="flex gap-1 text-sm">
+          {user && (
+            <span className="hidden px-2 py-1.5 text-xs text-charcoal/55 sm:inline" title={user.email}>
+              {user.email}
+            </span>
+          )}
           {LINKS.map((l) => {
             const isActive = loc.pathname.startsWith(l.to);
             return (
@@ -34,6 +45,22 @@ export default function Nav() {
               </Link>
             );
           })}
+          {user ? (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="ml-1 rounded-md px-3 py-1.5 text-charcoal hover:bg-sage/20"
+            >
+              Sign out
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="ml-1 rounded-md px-3 py-1.5 text-charcoal hover:bg-sage/20"
+            >
+              Sign in
+            </Link>
+          )}
         </nav>
       </div>
     </header>
